@@ -362,10 +362,10 @@ function highlightActiveLink() {
     if (link.getAttribute('href') === global.currentPage) {
       link.classList.add('active')
     }
-    if (link.getAttribute('href').includes('shows') && global.currentPage.includes('tv-details')) {
+    else if (link.getAttribute('href').includes('shows') && global.currentPage.includes('tv-details')) {
       link.classList.add('active');
-    }
-    if (link.getAttribute('href').includes('index') && global.currentPage.includes('movie-details')) {
+    }    
+    else if (link.getAttribute('href').includes('index') && global.currentPage.includes('movie-details')) {
       link.classList.add('active');
     }
   })
