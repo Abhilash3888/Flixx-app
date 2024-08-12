@@ -354,6 +354,7 @@ function showAlert(message, className = 'error') {
 
 //Highlight  active link{
 function highlightActiveLink() {
+
   const links = document.querySelectorAll('.nav-link');
 
 
@@ -361,10 +362,10 @@ function highlightActiveLink() {
     if (link.getAttribute('href') === global.currentPage) {
       link.classList.add('active')
     }
-    if (link.getAttribute('href') === '/shows.html' && global.currentPage === '/tv-details.html') {
+    if (link.getAttribute('href').includes('shows') && global.currentPage.includes('tv-details')) {
       link.classList.add('active');
     }
-    if (link.getAttribute('href') === '/index.html' && global.currentPage === '/movie-details.html') {
+    if (link.getAttribute('href').includes('index') && global.currentPage.includes('movie-details')) {
       link.classList.add('active');
     }
   })
