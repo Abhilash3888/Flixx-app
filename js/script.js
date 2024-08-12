@@ -4,14 +4,15 @@ const global = {
     term: '',
     type: '',
     page: 1,
-    totalPages: 1
+    totalPages: 1,
+    totalResults: 0
   }
 };
 const options = {
   method: 'GET',
   headers: {
     accept: 'application/json',
-
+    Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI3YjI3NjIxMTgxYjhlOWI4Mzk2NmQyMDRhNGIxYjFlMSIsIm5iZiI6MTcyMzIyNjQzMS45ODg2NzYsInN1YiI6IjY2YjY1N2E1ZTA1ODY1NzVlZDEyNTI5OSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.4rKv7RFDf8Rv7Wr5j1LSgOVEYDXN97Et4-xOemeC2LM'
   }
 };
 
@@ -193,10 +194,81 @@ async function search() {
   global.search.term = urlParams.get('search-term');
 
   if (global.search.term !== '' && global.search.term !== null) {
-    const { results } = await searchAPIData();
+    const { results, total_pages, page, total_results } = await searchAPIData();
+
+    global.search.page = page;
+    global.search.totalPages = total_pages;
+    global.search.totalResults = total_results;
+
+    if (results.length === 0) {
+      showAlert('No results found');
+      return;
+    }
+
+    displaySearchResults(results);
+    document.querySelector('#search-term').value = '';
   } else {
     showAlert('Please enter a search term');
   }
+}
+
+function displaySearchResults(results) {
+
+  document.querySelector('#search-results').innerHTML = '';
+  document.querySelector('#search-results-heading').innerHTML = '';
+  document.querySelector('#pagination').innerHTML = '';
+
+  results.forEach(result => {
+    const div = document.createElement('div');
+    div.classList.add('card');
+    div.innerHTML = `
+    <a href="${global.search.type}-details.html?id=${result.id}">
+      ${result.poster_path ? `<img
+        src="https://image.tmdb.org/t/p/w500/${result.poster_path}"
+        alt=${global.search.type === 'movie' ? result.title : result.name}>` : `<img
+        src="../images/no-image.jpg"
+        alt=${global.search.type === 'movie' ? result.title : result.name}>`}  
+    </a>
+    <div class="card-body">
+      <h5>${global.search.type === 'movie' ? result.title : result.name}</h5>
+      <p>
+        <small>Release: ${global.search.type === 'movie' ? result.release_date : result.first_air_date}</small>
+      </p>
+      </div>`;
+    document.querySelector('#search-results-heading').innerHTML = `<h2>${results.length} of ${global.search.totalResults} Results for ${global.search.term}</h2>`
+    document.querySelector('#search-results').appendChild(div);
+  });
+
+  displayPagination();
+}
+
+function displayPagination() {
+  const div = document.createElement('div');
+  div.classList.add('pagination');
+  div.innerHTML = `
+  <button class="btn" id="prev">Prev</button>
+  <button class="btn" id="next">Next</button>
+  <div class="page-counter">Page ${global.search.page} of ${global.search.totalPages}</div>`;
+  document.querySelector('#pagination').appendChild(div);
+
+  if (global.search.page === 1) {
+    document.querySelector('#prev').disabled = true;
+  }
+
+  if (global.search.page === global.search.totalPages) {
+    document.querySelector('#next').disabled = true;
+  }
+
+  document.querySelector('#next').addEventListener('click', async () => {
+    global.search.page++;
+    const { results, total_results } = await searchAPIData();
+    displaySearchResults(results);
+  });
+  document.querySelector('#prev').addEventListener('click', async () => {
+    global.search.page--;
+    const { results, total_results } = await searchAPIData();
+    displaySearchResults(results);
+  });
 }
 
 //Display Slider
@@ -257,7 +329,7 @@ async function fetchAPIData(endpoint) {
 async function searchAPIData() {
   const API_URL = 'https://api.themoviedb.org/3/';
   showSpinner();
-  const response = await fetch(`${API_URL}/search/${global.search.type}?query=${global.search.term}&language=en-US`, options);
+  const response = await fetch(`${API_URL}search/${global.search.type}?query=${global.search.term}&language=en-US&page=${global.search.page}`, options);
   const data = await response.json();
   hideSpinner();
   return data;
@@ -303,29 +375,19 @@ function addCommasToNumber(number) {
 }
 //Init
 function init() {
-  switch (global.currentPage) {
-    case '/':
-    case '/index.html': {
-      displaySlider();
-      displayPopularMovies();
-      break;
-    }
-    case '/shows.html': {
-      displayPopularShows();
-      break;
-    }
-    case '/movie-details.html': {
-      displayMovieDetails();
-      break;
-    }
-    case '/tv-details.html': {
-      displayShowDetails();
-      break;
-    }
-    case '/search.html': {
-      search();
-      break;
-    }
+  const page = global.currentPage;
+
+  if (["/", "/index.html"].includes(page)) {
+    displayPopularMovies();
+    displaySlider();
+  } else if (page.includes("shows")) {
+    displayPopularShows();
+  } else if (page.includes("movie-details")) {
+    displayMovieDetails();
+  } else if (page.includes("tv-details")) {
+    displayShowDetails();
+  } else if (page.includes("search")) {
+    search();
   }
 
   highlightActiveLink();
